@@ -1,9 +1,5 @@
-#begin by downloading the file and reading in the desired data
 
-#note that reading in the entire file would take approximately 149 MB of memory
-#each cell takes 8 bytes of memory, so 2,075,259 rows times 9 columns times 8 bytes
-#equals approximately 149 MB
-
+library("quantmod")
 library("data.table")
 library("datasets")
 
@@ -19,13 +15,15 @@ if (!file.exists(textFile)) {
 }
 
 #read the txt file
-pwrData <- read.table(textFile, header=TRUE, sep=";", na.strings="?", stringsAsFactors=FALSE)
+pwrData <- read.table(textFile, header=TRUE, sep=";", na.strings=c("NA", "?"), stringsAsFactors=FALSE)
 
 #create a data frame for the data from the specified dates
 #put date and time in correct format
+pwrDf <- pwrData[(pwrData$Date=="1/2/2007") | (pwrData$Date=="2/2/2007"),]
 pwrData$Date <- as.Date(pwrData$Date, format="%d/%m/%Y")
-pwrData$DateTime <- strptime(paste(pwrData$Date, pwrData$Time), "%d/%m/%Y %H:%M:%S")
-pwrDf <- pwrData[(pwrData$Date=="2007-02-01") | (pwrData$Date=="2007-02-02"),]
+pwrDf$DateTime <- paste(pwrDf$Date, pwrDf$Time, sep=" ")
+pwrDf$DateTime <- strptime(pwrDf$DateTime, "%d/%m/%Y %H:%M:%S")
+dateTime <- pwrDf$DateTime
 
 #convert to numeric
 activePower <- as.numeric(as.character(pwrDf$Global_active_power))
@@ -36,10 +34,11 @@ subMetering2 <- as.numeric(as.character(pwrDf$Sub_metering_2))
 subMetering3 <- as.numeric(as.character(pwrDf$Sub_metering_3))
 
 #create the png file
-png(filename="plot4.png", width=480, height=480, units="px", bg="transparent")
+png(filename="plot4.png", width = 480, height = 480, units="px")
+par(mfrow=c(2,2))
 
-#generate the plot
-plot(pwrData$DateTime,
+#generate the plots
+plot(dateTime,
     activePower,
      type = "l", 
      ylab = "Global Active Power (kilowatts)", 
@@ -47,20 +46,7 @@ plot(pwrData$DateTime,
      col = "black",
      main = " ")
 
-plot(pwrData$DateTime,
-     subMetering1,
-     type = "l",
-     ylab = "Energy sub metering", 
-     xlab = "",
-     main = " ")
-lines(pwrData$DateTime, subMetering2, col="red")
-lines(pwrData$DateTime, subMetering3, col="blue")
-#legend
-subs <- c("Sub_metering_1", "Sub_metering_2", "Sub_metering_3")
-colors <- c("black", "red", "blue")
-legend("topright", col=colors, legend=variables, lwd = 1, lty = 1)
-
-plot(pwrData$DateTime, 
+plot(dateTime, 
      voltage,
      type="l",
      ylab="Voltage",
@@ -68,7 +54,20 @@ plot(pwrData$DateTime,
      col="black",
      main=" ")
 
-plot(pwrData$DateTime,
+plot(dateTime,
+     subMetering1,
+     type = "l",
+     ylab = "Energy sub metering", 
+     xlab = "",
+     main = " ")
+lines(dateTime, subMetering2, col="red")
+lines(dateTime, subMetering3, col="blue")
+#legend
+subs <- c("Sub_metering_1", "Sub_metering_2", "Sub_metering_3")
+colors <- c("black", "red", "blue")
+legend("topright", col=colors, legend=subs, lwd = 1, lty = 1)
+
+plot(dateTime,
      reactivePower,
      type="l",
      ylab="Global_reactive_power",
